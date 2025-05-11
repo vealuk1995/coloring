@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Gothic Coloring</title>
+  <!-- Gothic Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+  <style>
+    /* Base Reset */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1b1b1b;
+      color: #eee;
+      font-family: 'MedievalSharp', serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    a { text-decoration: none; color: inherit; }
+    /* Header */
+    header {
+      background: #2a2a2a url('https://www.transparenttextures.com/patterns/black-linen.png');
+      color: #f5e1a4;
+      text-align: center;
+      padding: 2rem 1rem;
+      border-bottom: 4px solid #444;
+      font-family: 'UnifrakturMaguntia', cursive;
+      position: relative;
+    }
+    header h1 {
+      font-size: 3rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    }
+    header p {
+      font-size: 1rem;
+      opacity: 0.8;
+    }
+    /* Main Layout */
+    main {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      padding: 1rem;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    /* Gallery */
+    #gallery {
+      flex: 1 1 200px;
+      max-width: 200px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+    #gallery.hidden { display: none; }
+    #gallery img {
+      width: 100%;
+      border: 2px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    #gallery img:hover { transform: scale(1.05); }
+    /* Canvas Container */
+    #canvasContainer {
+      position: relative;
+      flex: 3 1 400px;
+      min-width: 300px;
+      background: #2e2e2e;
+      border: 2px solid #555;
+    }
+    #canvasContainer canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: auto;
+    }
+    #colorCanvas { z-index: 1; }
+    #imageCanvas { z-index: 2; pointer-events: none; }
+    /* Controls */
+    #controls {
+      flex: 1 1 200px;
+      max-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .control-group { margin-bottom: 1rem; }
+    .control-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    button, input[type=range], input[type=color], input[type=file] {
+      background: transparent;
+      border: 1px solid #555;
+      color: #eee;
+      font-family: 'MedievalSharp', serif;
+      padding: 0.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover, input[type=range]:hover, input[type=color]:hover, input[type=file]:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+    .palette .color-swatch {
+      width: 24px;
+      height: 24px;
+      border: 1px solid #555;
+      cursor: pointer;
+    }
+    #instructions {
+      margin-top: auto;
+      font-size: 0.9rem;
+      color: #ccc;
+      line-height: 1.4;
+    }
+    
+.mobile-fab {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  display: none;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 999;
+}
+
+.mobile-fab button {
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+@media (max-width: 600px) {
+  #controls { display: none; }
+  .mobile-fab { display: flex; }
+}
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      main { flex-direction: column; align-items: stretch; }
+      #gallery, #controls { max-width: 100%; flex: none; }
+      #canvasContainer { min-width: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gothic Coloring</h1>
+    <p>Immerse yourself in the dark world of artistic magic</p>
+  </header>
+  <main>
+    <div id="gallery">
+      <img src="images/Superbia.png" alt="Superbia" data-src="images/Superbia.png">
+      <img src="images/Avaritia.png" alt="Avaritia" data-src="images/Avaritia.png">
+      <img src="images/Luxuria.png" alt="Luxuria" data-src="images/Luxuria.png">
+      <img src="images/Ira.png" alt="Ira" data-src="images/Ira.png">
+      <img src="images/Gula.png" alt="Gula" data-src="images/Gula.png">
+      <img src="images/Invidia.png" alt="Invidia" data-src="images/Invidia.png">
+      <img src="images/Acedia.png" alt="Acedia" data-src="images/Acedia.png">
+    </div>
+    <div id="canvasContainer">
+      <canvas id="colorCanvas"></canvas>
+      <canvas id="imageCanvas"></canvas>
+    </div>
+    <div id="controls">
+      <div class="control-group">
+        <button id="toggleGallery">Hide Gallery</button>
+      <//div>
+      <div class="control-group">
+        <label for="brushSize">Brush Size:</label>
+        <input type="range" id="brushSize" min="1" max="50" value="10">
+      </div>
+      <div class="control-group">
+        <label for="colorPicker">Color Picker:</label>
+        <input type="color" id="colorPicker" value="#ff0000">
+      </div>
+      <div class="control-group">
+        <div>Recent Colors:</div>
+        <div class="palette" id="recentColors"></div>
+      </div>
+      <button id="clearBtn">Clear Canvas</button>
+      <button id="saveBtn">Save Image</button>
+      <div class="control-group">
+        <label for="uploadInput">Upload Your Image:</label>
+        <input type="file" id="uploadInput" accept="image/png, image/svg+xml">
+      </div>
+      <div id="instructions">
+        <p>1. Select an image from the gallery or upload your own.</p>
+        <p>2. Choose brush color and size.</p>
+        <p>3. Paint within transparent areas.</p>
+        <p>4. When finished, click "Save Image".</p>
+      </div>
+    </div>
+  </main>
+  <script>
+    const gallery = document.getElementById('gallery');
+    const toggleBtn = document.getElementById('toggleGallery');
+    const imageCanvas = document.getElementById('imageCanvas');
+    const colorCanvas = document.getElementById('colorCanvas');
+    const ctxImg = imageCanvas.getContext('2d');
+    const ctxColor = colorCanvas.getContext('2d');
+    const brushSizeInput = document.getElementById('brushSize');
+    const colorPicker = document.getElementById('colorPicker');
+    const recentColorsDiv = document.getElementById('recentColors');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const uploadInput = document.getElementById('uploadInput');
+    let drawing = false;
+    let brushSize = parseInt(brushSizeInput.value, 10);
+    let brushColor = colorPicker.value;
+    let recentColors = [];
+
+    toggleBtn.addEventListener('click', () => {
+      if (gallery.classList.contains('hidden')) {
+        gallery.classList.remove('hidden');
+        toggleBtn.textContent = 'Hide Gallery';
+      } else {
+        gallery.classList.add('hidden');
+        toggleBtn.textContent = 'Show Gallery';
+      }
+    });
+
+    function loadImage(src) {
+      const img = new Image();
+      img.onload = () => {
+        imageCanvas.width = img.width;
+        imageCanvas.height = img.height;
+        colorCanvas.width = img.width;
+        colorCanvas.height = img.height;
+        ctxImg.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
+        ctxImg.drawImage(img, 0, 0);
+        ctxColor.clearRect(0, 0, colorCanvas.width, colorCanvas.height);
+      };
+      img.src = src;
+    }
+
+    gallery.addEventListener('click', e => {
+      if (e.target.tagName === 'IMG') loadImage(e.target.dataset.src);
+    });
+    uploadInput.addEventListener('change', e => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader(); reader.onload = ev => loadImage(ev.target.result);
+      reader.readAsDataURL(file);
+    });
+
+    colorCanvas.addEventListener('mousedown', e => { drawing = true; addRecentColor(brushColor); draw(e); });
+    colorCanvas.addEventListener('mouseup', () => drawing = false);
+    colorCanvas.addEventListener('mouseout', () => drawing = false);
+    colorCanvas.addEventListener('mousemove', draw);
+
+    function draw(e) {
+      if (!drawing) return;
+      const rect = colorCanvas.getBoundingClientRect();
+      const scaleX = colorCanvas.width / rect.width;
+      const scaleY = colorCanvas.height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      ctxColor.fillStyle = brushColor;
+      ctxColor.beginPath(); ctxColor.arc(x, y, brushSize, 0, Math.PI * 2); ctxColor.fill();
+    }
+
+    brushSizeInput.addEventListener('input', () => brushSize = parseInt(brushSizeInput.value, 10));
+    colorPicker.addEventListener('input', () => brushColor = colorPicker.value);
+
+    function addRecentColor(color) {
+      if (recentColors[0] === color) return;
+      recentColors.unshift(color);
+      if (recentColors.length > 10) recentColors.pop();
+      renderRecentColors();
+    }
+
+    function renderRecentColors() {
+      recentColorsDiv.innerHTML = '';
+      recentColors.forEach(c => {
+        const sw = document.createElement('div'); sw.className = 'color-swatch'; sw.style.background = c;
+        sw.addEventListener('click', () => { brushColor = c; colorPicker.value = c; });
+        recentColorsDiv.appendChild(sw);
+      });
+    }
+
+    clearBtn.addEventListener('click', () => ctxColor.clearRect(0, 0, colorCanvas.width, colorCanvas.height));
+
+    saveBtn.addEventListener('click', () => {
+      const tmpCanvas = document.createElement('canvas'); tmpCanvas.width = imageCanvas.width; tmpCanvas.height = imageCanvas.height;
+      const tmpCtx = tmpCanvas.getContext('2d'); tmpCtx.drawImage(imageCanvas, 0, 0); tmpCtx.drawImage(colorCanvas, 0, 0);
+      if (tmpCanvas.toBlob) {
+        tmpCanvas.toBlob(blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = 'colored-image.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }, 'image/png');
+      } else {
+        const dataUrl = tmpCanvas.toDataURL('image/png'); const a = document.createElement('a'); a.style.display = 'none'; a.href = dataUrl; a.download = 'colored-image.png'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => { const first = gallery.querySelector('img'); if (first) loadImage(first.dataset.src); });
+    document.getElementById('fabPalette').addEventListener('click', () => {
+      alert('Выбор цвета недоступен в мобильной версии. Расширьте экран или поверните устройство.');
+    });
+
+    document.getElementById('fabGallery').addEventListener('click', () => {
+      gallery.classList.toggle('hidden');
+    });
+
+    document.getElementById('fabSave').addEventListener('click', () => {
+      saveBtn.click();
+    });
+
+  </script>
+
+<!-- FAB-кнопки для мобильных -->
+<div class="mobile-fab">
+  <button id="fabPalette">🎨</button>
+  <button id="fabGallery">🖼</button>
+  <button id="fabSave">💾</button>
+</div>
+</body>
+</html>
